@@ -1,4 +1,4 @@
-# Anchore CircleCi Orbs
+# Anchore CircleCi Orbs [![CircleCI](https://circleci.com/gh/anchore/circleci-orbs/tree/master.svg?style=svg)](https://circleci.com/gh/anchore/circleci-orbs/tree/master)
 All orbs are tested with .circleci/config.yaml of this repo. Finished orbs will be published to the public CircleCi orb repository under the anchore namespace.
 
 * To test orb changes, create a branch that starts with `orb_`. 
