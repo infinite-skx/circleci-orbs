@@ -64,9 +64,6 @@ jobs:
         policy_failure: True
         dockerfile_path: .circleci/node_critical_fail/Dockerfile
         policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
-    - anchore/parse_reports
-    - store_artifacts:
-        path: anchore-reports
 
   custom_policy_pass:
     executor: anchore/anchore_engine
@@ -97,11 +94,15 @@ workflows:
       - orb-tools/publish-dev:
           context: publish_dev_orb
           orb-name: anchore/anchore-engine
+          publish-sha-version: false
           requires:
             - orb-tools/pack
       - orb-tools/trigger-integration-tests-workflow:
           name: trigger-integration-dev
           context: publish_dev_orb
+          pipeline-param-map: >-
+            {\"run-integration-tests\": true, 
+            \"dev-orb-version\": \"dev:alpha\"}
           requires:
             - orb-tools/publish-dev
     unless: << pipeline.parameters.run-integration-tests >>
@@ -110,35 +111,35 @@ workflows:
     jobs:
       - local_image_scan
       - custom_policy_pass
-      - custom_policy_fail
-      - anchore/image_scan:
-          image_name: gcr.io/testing-214322/alpine-test
-          private_registry: true
-          registry_name: gcr.io
-          registry_user: _json_key
-          registry_pass: $_gcr_json_key
-    when: << pipeline.parameters.run-integration-tests >>
-
-  publish_prod_orb_on_tag:
-    jobs:
       - anchore/image_scan:
           name: anchore_engine_scan
           image_name: anchore/anchore-engine:latest
           policy_bundle_file_path: ''
           timeout: '1200'
-          filters: *filter_release_semver_tags
       - anchore/image_scan:
-          name: private_testing_scan
-          image_name: anchore/private_testing:anchore-ui-dev
-          private_registry: True
-          timeout: '500'
-          context: dockerhub
+          name: gcr_image_scan
+          image_name: gcr.io/testing-214322/alpine-test
+          private_registry: true
+          registry_name: gcr.io
+          registry_user: _json_key
+          registry_pass: $_gcr_json_key
+      - orb-tools/publish-dev:
+          context: publish_dev_orb
+          orb-name: anchore/anchore-engine
+          publish-alpha-version: false
+          requires:
+            - anchore_engine_scan
+            - local_image_scan
+            - custom_policy_pass
+            - gcr_image_scan
+    when: << pipeline.parameters.run-integration-tests >>
+
+  publish_prod_orb_on_tag:
+    jobs:
+      - custom_policy_fail:
           filters: *filter_release_semver_tags
       - local_images_scan:
           name: local_images_scan
-          requires:
-            - anchore_engine_scan
-            - private_testing_scan
           filters: *filter_release_semver_tags
       - hold_for_approval:
           type: approval
