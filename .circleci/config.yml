@@ -134,7 +134,7 @@ workflows:
       - orb-tools/dev-promote-prod-from-git-tag:
           add-pr-comment: false
           orb-name: anchore/anchore-engine
-          context: publish_dev_orb
+          context: publish_prod_orb
           requires:
             - hold_for_approval
           filters: *filter_release_semver_tags
