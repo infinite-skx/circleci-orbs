@@ -27,7 +27,7 @@ steps:
         fi
         if [[ ! -z "$BUNDLE_PATH" ]] && [[ -f "$BUNDLE_PATH" ]]; then
           docker cp "$BUNDLE_PATH" anchore-engine:/anchore-engine/$(basename "$BUNDLE_PATH")
-          (docker exec -e BUNDLE_PATH="$BUNDLE_PATH" -i anchore-engine bash -lc 'anchore-cli --json policy add /anchore-engine/$(basename "$BUNDLE_PATH")' | jq '.policyId' | xargs docker exec -i bash -lc 'anchore-engine anchore-cli policy activate') || \
+          (docker exec -e BUNDLE_PATH="$BUNDLE_PATH" -i anchore-engine bash -lc 'anchore-cli --json policy add /anchore-engine/$(basename "$BUNDLE_PATH")' | jq '.policyId' | xargs -I{} docker exec -i anchore-engine bash -lc 'anchore-cli policy activate {}') || \
             printf "\n%s\n" "Failed to activate policy bundle $BUNDLE_PATH - using default policy."
         else
           printf "\n%s\n" "Unable to locate policy bundle $BUNDLE_PATH - using default policy."
