@@ -106,8 +106,7 @@ workflows:
   test_dev_orb:
     jobs:
       - local_image_scan
-      - custom_policy_pass
-      - custom_policy_fail
+      - local_images_scan
       - anchore/image_scan:
           image_name: anchore/anchore-engine:latest
           policy_bundle_file_path: ''
@@ -122,13 +121,17 @@ workflows:
 
   publish_prod_orb_on_tag:
     jobs:
+      - custom_policy_fail:
+          filters: *filter_release_semver_tags
+      - custom_policy_pass:
+          filters: *filter_release_semver_tags
       - local_images_scan:
           name: local_images_scan
           filters: *filter_release_semver_tags
       - hold_for_approval:
           type: approval
           requires:
-            - local_images_scan
+            - custom_policy_pass
           filters: *filter_release_semver_tags
       - orb-tools/dev-promote-prod-from-git-tag:
           add-pr-comment: false
