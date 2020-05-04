@@ -132,6 +132,7 @@ workflows:
           type: approval
           requires:
             - custom_policy_pass
+            - local_images_scan
           filters: *filter_release_semver_tags
       - orb-tools/dev-promote-prod-from-git-tag:
           add-pr-comment: false
