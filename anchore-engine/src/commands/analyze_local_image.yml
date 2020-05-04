@@ -59,4 +59,5 @@ steps:
           echo "ERROR - could not find Dockerfile $DOCKERFILE_PATH - Dockerfile not included in scan."
         fi
         run_cmd="$run_cmd $IMAGE_NAME"
+        docker pull docker.io/anchore/inline-scan:${ANCHORE_VERSION}
         eval "$run_cmd"
