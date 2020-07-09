@@ -6,7 +6,7 @@ description: |
 usage:
   version: 2.1
   orbs:
-    anchore: anchore/anchore-engine@1.6.9
+    anchore: anchore/anchore-engine@1.6
 
   workflows:
     scan_image:
