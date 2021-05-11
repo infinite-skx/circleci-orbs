@@ -2,7 +2,7 @@ description: |
   Docker stable image with ANCHORE_VERSION environment variable set.
 
 environment:
-  ANCHORE_VERSION: v0.9.3
+  ANCHORE_VERSION: v0.9.4
 
 docker:
   - image: docker:stable-git
