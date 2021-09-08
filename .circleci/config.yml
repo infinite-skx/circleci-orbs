@@ -30,6 +30,7 @@ jobs:
     - anchore/analyze_local_image:
         image_name: ${CIRCLE_PROJECT_REPONAME}:ci
         dockerfile_path: .circleci/Dockerfile
+        timeout: '500'
     - anchore/parse_reports
     - store_artifacts:
         path: anchore-reports
@@ -47,6 +48,7 @@ jobs:
           docker build -t "${CIRCLE_PROJECT_REPONAME}:fail" -f .circleci/node_critical_fail/Dockerfile .circleci/node_critical_fail/
     - anchore/analyze_local_image:
         image_name: "${CIRCLE_PROJECT_REPONAME}:ci ${CIRCLE_PROJECT_REPONAME}:pass ${CIRCLE_PROJECT_REPONAME}:fail"
+        timeout: '500'
     - anchore/parse_reports
     - store_artifacts:
         path: anchore-reports
@@ -61,6 +63,7 @@ jobs:
         command: docker build -t "${CIRCLE_PROJECT_REPONAME}:policy_fail" -f .circleci/node_critical_fail/Dockerfile .circleci/node_critical_fail/
     - anchore/analyze_local_image:
         image_name: ${CIRCLE_PROJECT_REPONAME}:policy_fail
+        timeout: '500'
         policy_failure: True
         dockerfile_path: .circleci/node_critical_fail/Dockerfile
         policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
@@ -75,6 +78,7 @@ jobs:
         command: docker build -t "${CIRCLE_PROJECT_REPONAME}:policy_pass" -f .circleci/node_critical_pass/Dockerfile .circleci/node_critical_pass/
     - anchore/analyze_local_image:
         image_name: ${CIRCLE_PROJECT_REPONAME}:policy_pass
+        timeout: '500'
         policy_failure: True
         dockerfile_path: .circleci/node_critical_pass/Dockerfile
         policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
