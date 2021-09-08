@@ -48,7 +48,7 @@ jobs:
           docker build -t "${CIRCLE_PROJECT_REPONAME}:fail" -f .circleci/node_critical_fail/Dockerfile .circleci/node_critical_fail/
     - anchore/analyze_local_image:
         image_name: "${CIRCLE_PROJECT_REPONAME}:ci ${CIRCLE_PROJECT_REPONAME}:pass ${CIRCLE_PROJECT_REPONAME}:fail"
-        timeout: '500'
+        timeout: '900'
     - anchore/parse_reports
     - store_artifacts:
         path: anchore-reports
