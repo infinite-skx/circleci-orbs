@@ -1,148 +1,26 @@
-# Define YAML anchors
-filter_release_semver_tags: &filter_release_semver_tags
-  branches:
-    ignore: /.*/
-  tags:
-    only: /^(major|minor|patch)-release-v\d+\.\d+\.\d+$/
-
-# Start of CircleCI Configuration
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
-parameters:
-  dev-orb-version:
-    default: 'dev:alpha'
-    type: string
-  run-integration-tests:
-    default: false
-    type: boolean
-orbs:
-  anchore: anchore/anchore-engine@<<pipeline.parameters.dev-orb-version>>
-  orb-tools: circleci/orb-tools@9.0.0
 
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  local_image_scan:
-    executor: anchore/anchore_engine
+  say-hello:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    docker:
+      - image: cimg/base:stable
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
-    - setup_remote_docker
-    - checkout
-    - run:
-        name: build container
-        command: docker build -t "${CIRCLE_PROJECT_REPONAME}:ci" -f .circleci/Dockerfile .
-    - anchore/analyze_local_image:
-        image_name: ${CIRCLE_PROJECT_REPONAME}:ci
-        dockerfile_path: .circleci/Dockerfile
-        timeout: '500'
-    - anchore/parse_reports
-    - store_artifacts:
-        path: anchore-reports
+      - checkout
+      - run:
+          name: "Say hello"
+          command: "echo Hello, World!"
 
-  local_images_scan:
-    executor: anchore/anchore_engine
-    steps:
-    - setup_remote_docker
-    - checkout
-    - run:
-        name: build container
-        command: |
-          docker build -t "${CIRCLE_PROJECT_REPONAME}:ci" -f .circleci/Dockerfile .
-          docker build -t "${CIRCLE_PROJECT_REPONAME}:pass" -f .circleci/node_critical_pass/Dockerfile .circleci/node_critical_pass/
-          docker build -t "${CIRCLE_PROJECT_REPONAME}:fail" -f .circleci/node_critical_fail/Dockerfile .circleci/node_critical_fail/
-    - anchore/analyze_local_image:
-        image_name: "${CIRCLE_PROJECT_REPONAME}:ci ${CIRCLE_PROJECT_REPONAME}:pass ${CIRCLE_PROJECT_REPONAME}:fail"
-        timeout: '900'
-    - anchore/parse_reports
-    - store_artifacts:
-        path: anchore-reports
-
-  custom_policy_fail:
-    executor: anchore/anchore_engine
-    steps:
-    - setup_remote_docker
-    - checkout
-    - run:
-        name: build container
-        command: docker build -t "${CIRCLE_PROJECT_REPONAME}:policy_fail" -f .circleci/node_critical_fail/Dockerfile .circleci/node_critical_fail/
-    - anchore/analyze_local_image:
-        image_name: ${CIRCLE_PROJECT_REPONAME}:policy_fail
-        timeout: '500'
-        policy_failure: True
-        dockerfile_path: .circleci/node_critical_fail/Dockerfile
-        policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
-
-  custom_policy_pass:
-    executor: anchore/anchore_engine
-    steps:
-    - setup_remote_docker
-    - checkout
-    - run:
-        name: build container
-        command: docker build -t "${CIRCLE_PROJECT_REPONAME}:policy_pass" -f .circleci/node_critical_pass/Dockerfile .circleci/node_critical_pass/
-    - anchore/analyze_local_image:
-        image_name: ${CIRCLE_PROJECT_REPONAME}:policy_pass
-        timeout: '500'
-        policy_failure: True
-        dockerfile_path: .circleci/node_critical_pass/Dockerfile
-        policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
-    - anchore/parse_reports
-    - store_artifacts:
-        path: anchore-reports
-
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  lint_publish_dev_orb:
+  say-hello-workflow:
     jobs:
-      - orb-tools/lint:
-          lint-dir: anchore-engine/src/
-      - orb-tools/pack:
-          source-dir: anchore-engine/src/
-          requires:
-            - orb-tools/lint
-      - orb-tools/publish-dev:
-          context: publish_dev_orb
-          orb-name: anchore/anchore-engine
-          requires:
-            - orb-tools/pack
-      - orb-tools/trigger-integration-tests-workflow:
-          name: trigger-integration-dev
-          context: publish_dev_orb
-          requires:
-            - orb-tools/publish-dev
-    unless: << pipeline.parameters.run-integration-tests >>
-
-  test_dev_orb:
-    jobs:
-      - local_image_scan
-      - local_images_scan
-      - anchore/image_scan:
-          image_name: anchore/anchore-engine:latest
-          policy_bundle_file_path: ''
-          timeout: '1200'
-      - anchore/image_scan:
-          image_name: gcr.io/testing-214322/alpine-test
-          private_registry: true
-          registry_name: gcr.io
-          registry_user: _json_key
-          registry_pass: $_gcr_json_key
-    when: << pipeline.parameters.run-integration-tests >>
-
-  publish_prod_orb_on_tag:
-    jobs:
-      - custom_policy_fail:
-          filters: *filter_release_semver_tags
-      - custom_policy_pass:
-          filters: *filter_release_semver_tags
-      - local_images_scan:
-          name: local_images_scan
-          filters: *filter_release_semver_tags
-      - hold_for_approval:
-          type: approval
-          requires:
-            - custom_policy_pass
-            - local_images_scan
-          filters: *filter_release_semver_tags
-      - orb-tools/dev-promote-prod-from-git-tag:
-          add-pr-comment: false
-          orb-name: anchore/anchore-engine
-          context: publish_prod_orb
-          requires:
-            - hold_for_approval
-          filters: *filter_release_semver_tags
-    unless: << pipeline.parameters.run-integration-tests >>
+      - say-hello
